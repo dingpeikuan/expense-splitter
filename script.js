@@ -13,23 +13,36 @@ document.addEventListener('DOMContentLoaded', function() {
 // 添加参与者
 function addParticipant() {
     const nameInput = document.getElementById('participant-name');
+    const amountInput = document.getElementById('participant-amount');
     const name = nameInput.value.trim();
+    const amount = parseFloat(amountInput.value);
     
     if (!name) {
         alert('请输入参与者姓名');
         return;
     }
     
-    if (participants.includes(name)) {
+    if (participants.some(p => p.name === name)) {
         alert('该参与者已存在');
         return;
     }
     
-    participants.push(name);
+    if (isNaN(amount) || amount < 0) {
+        alert('请输入有效的金额（可以为0）');
+        return;
+    }
+    
+    participants.push({
+        name: name,
+        amount: amount
+    });
+    
     nameInput.value = '';
+    amountInput.value = '';
     
     updatePayerSelect();
     renderParticipants();
+    renderExpenses();
     saveData();
 }
 
@@ -40,8 +53,8 @@ function updatePayerSelect() {
     
     participants.forEach(participant => {
         const option = document.createElement('option');
-        option.value = participant;
-        option.textContent = participant;
+        option.value = participant.name;
+        option.textContent = participant.name;
         select.appendChild(option);
     });
 }
@@ -50,66 +63,30 @@ function updatePayerSelect() {
 function renderParticipants() {
     const list = document.getElementById('participants-list');
     list.innerHTML = '';
+}
+
+// 更新金额
+function updateAmount(index, newAmount) {
+    const amount = parseFloat(newAmount);
+    if (isNaN(amount) || amount < 0) {
+        alert('请输入有效的金额（可以为0）');
+        renderExpenses();
+        return;
+    }
     
-    participants.forEach((participant, index) => {
-        const item = document.createElement('div');
-        item.className = 'participant-item';
-        item.innerHTML = `
-            <span>${participant}</span>
-            <button class="delete-btn" onclick="removeParticipant(${index})">删除</button>
-        `;
-        list.appendChild(item);
-    });
+    participants[index].amount = amount;
+    saveData();
 }
 
 // 删除参与者
 function removeParticipant(index) {
     participants.splice(index, 1);
+    
+    // 删除该参与者相关的费用
+    expenses = expenses.filter(expense => expense.payer !== participants[index]?.name);
+    
     updatePayerSelect();
     renderParticipants();
-    saveData();
-}
-
-// 添加费用
-function addExpense() {
-    const descInput = document.getElementById('expense-desc');
-    const amountInput = document.getElementById('expense-amount');
-    const payerSelect = document.getElementById('expense-payer');
-    
-    const description = descInput.value.trim();
-    const amount = parseFloat(amountInput.value);
-    const payer = payerSelect.value;
-    
-    if (!description) {
-        alert('请输入费用描述');
-        return;
-    }
-    
-    if (!amount || amount <= 0) {
-        alert('请输入有效的金额');
-        return;
-    }
-    
-    if (!payer) {
-        alert('请选择支付人');
-        return;
-    }
-    
-    const expense = {
-        id: Date.now(),
-        description: description,
-        amount: amount,
-        payer: payer,
-        timestamp: new Date().toLocaleString()
-    };
-    
-    expenses.push(expense);
-    
-    // 清空输入框
-    descInput.value = '';
-    amountInput.value = '';
-    payerSelect.value = '';
-    
     renderExpenses();
     saveData();
 }
@@ -119,35 +96,20 @@ function renderExpenses() {
     const list = document.getElementById('expenses-list');
     list.innerHTML = '';
     
-    if (expenses.length === 0) {
-        list.innerHTML = '<div style="text-align: center; color: #718096; padding: 20px;">暂无费用记录</div>';
-        return;
-    }
-    
-    expenses.forEach((expense, index) => {
+    participants.forEach((participant, index) => {
         const item = document.createElement('div');
         item.className = 'expense-item';
         item.innerHTML = `
-            <div>
-                <strong>${expense.description}</strong>
-                <div style="font-size: 0.9em; color: #718096;">
-                    支付人：${expense.payer} | 时间：${expense.timestamp}
-                </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>${participant.name}</span>
+                <span>金额：</span>
+                <input type="number" value="${participant.amount}" min="0" step="0.01" 
+                    onchange="updateAmount(${index}, this.value)" style="width: 80px;">
             </div>
-            <div style="text-align: right;">
-                <div style="font-weight: bold; color: #2d3748; font-size: 1.1em;">¥${expense.amount.toFixed(2)}</div>
-                <button class="delete-btn" onclick="removeExpense(${index})">删除</button>
-            </div>
+            <button class="delete-btn" onclick="removeParticipant(${index})">删除</button>
         `;
         list.appendChild(item);
     });
-}
-
-// 删除费用
-function removeExpense(index) {
-    expenses.splice(index, 1);
-    renderExpenses();
-    saveData();
 }
 
 // 计算分摊
@@ -157,35 +119,19 @@ function calculate() {
         return;
     }
     
-    if (expenses.length === 0) {
-        alert('请至少添加一个费用项目');
-        return;
-    }
-    
     // 计算总费用
-    const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalAmount = participants.reduce((sum, participant) => sum + participant.amount, 0);
     
     // 计算每人应付的平均金额
     const averageAmount = totalAmount / participants.length;
     
-    // 计算每个人的实际支付总额
-    const paidAmounts = {};
-    participants.forEach(participant => {
-        paidAmounts[participant] = 0;
-    });
-    
-    expenses.forEach(expense => {
-        paidAmounts[expense.payer] += expense.amount;
-    });
-    
     // 计算每个人的应收/应付金额
     const settlements = participants.map(participant => {
-        const paid = paidAmounts[participant];
-        const balance = paid - averageAmount;
+        const balance = participant.amount - averageAmount;
         
         return {
-            name: participant,
-            paid: paid,
+            name: participant.name,
+            paid: participant.amount,
             average: averageAmount,
             balance: balance
         };
@@ -199,67 +145,228 @@ function calculate() {
 function renderResults(settlements, totalAmount) {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = '';
+
+    // 创建图表容器
+    const chartContainer = document.createElement('div');
+    chartContainer.id = 'payment-chart';
+    chartContainer.style.margin = '20px 0';
+    chartContainer.style.height = '500px';
+    resultsDiv.appendChild(chartContainer);
+
+    // 计算支付关系
+    const paymentRelations = calculatePaymentRelations(settlements);
     
-    // 显示总费用信息
-    const summary = document.createElement('div');
-    summary.className = 'result-item even';
-    summary.innerHTML = `
-        <div>
-            <strong>费用汇总</strong>
-            <div style="font-size: 0.9em; color: #718096;">
-                总费用：¥${totalAmount.toFixed(2)} | 人均：¥${(totalAmount / participants.length).toFixed(2)}
-            </div>
-        </div>
-        <div class="amount">${participants.length}人</div>
-    `;
-    resultsDiv.appendChild(summary);
+    // 渲染支付关系图表
+    renderPaymentChart(paymentRelations);
+}
+
+// 计算支付关系
+function calculatePaymentRelations(settlements) {
+    const receivers = settlements.filter(s => s.balance > 0).sort((a, b) => b.balance - a.balance);
+    const payers = settlements.filter(s => s.balance < 0).sort((a, b) => a.balance - b.balance);
     
-    // 显示每个人的结算信息
-    settlements.forEach(settlement => {
-        const item = document.createElement('div');
+    const relations = [];
+    
+    let i = 0, j = 0;
+    while (i < receivers.length && j < payers.length) {
+        const receiver = receivers[i];
+        const payer = payers[j];
         
-        if (settlement.balance > 0) {
-            item.className = 'result-item receive';
-            item.innerHTML = `
-                <div>
-                    <strong>${settlement.name}</strong>
-                    <div style="font-size: 0.9em; color: #718096;">
-                        实际支付：¥${settlement.paid.toFixed(2)} | 应收：¥${settlement.balance.toFixed(2)}
-                    </div>
-                </div>
-                <div class="amount">+¥${settlement.balance.toFixed(2)}</div>
-            `;
-        } else if (settlement.balance < 0) {
-            item.className = 'result-item pay';
-            item.innerHTML = `
-                <div>
-                    <strong>${settlement.name}</strong>
-                    <div style="font-size: 0.9em; color: #718096;">
-                        实际支付：¥${settlement.paid.toFixed(2)} | 应付：¥${Math.abs(settlement.balance).toFixed(2)}
-                    </div>
-                </div>
-                <div class="amount">-¥${Math.abs(settlement.balance).toFixed(2)}</div>
-            `;
-        } else {
-            item.className = 'result-item even';
-            item.innerHTML = `
-                <div>
-                    <strong>${settlement.name}</strong>
-                    <div style="font-size: 0.9em; color: #718096;">
-                        实际支付：¥${settlement.paid.toFixed(2)} | 无需结算
-                    </div>
-                </div>
-                <div class="amount">¥0.00</div>
-            `;
-        }
+        const amount = Math.min(receiver.balance, Math.abs(payer.balance));
         
-        resultsDiv.appendChild(item);
+        relations.push({
+            from: payer.name,
+            to: receiver.name,
+            amount: amount
+        });
+        
+        receiver.balance -= amount;
+        payer.balance += amount;
+        
+        if (receiver.balance <= 0.01) i++;
+        if (payer.balance >= -0.01) j++;
+    }
+    
+    return relations;
+}
+
+// 渲染支付关系图表
+function renderPaymentChart(relations) {
+    const chartDiv = document.getElementById('payment-chart');
+    chartDiv.innerHTML = '';
+    
+    // 创建SVG容器
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '600');
+    svg.setAttribute('viewBox', '0 0 800 600');
+    chartDiv.appendChild(svg);
+    
+    // 收集所有参与者
+    const allParticipants = new Set();
+    relations.forEach(relation => {
+        allParticipants.add(relation.from);
+        allParticipants.add(relation.to);
     });
+    
+    // 计算节点位置
+    const participants = Array.from(allParticipants);
+    const nodePositions = {};
+    const radius = 50;
+    const centerX = 400;
+    const centerY = 300;
+    const circleRadius = Math.min(250, 180 * participants.length / 3);
+    
+    // 添加箭头标记定义
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '10');
+    marker.setAttribute('markerHeight', '7');
+    marker.setAttribute('refX', '9');
+    marker.setAttribute('refY', '3.5');
+    marker.setAttribute('orient', 'auto');
+    
+    const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    arrow.setAttribute('points', '0 0, 10 3.5, 0 7');
+    arrow.setAttribute('fill', '#4a5568');
+    
+    marker.appendChild(arrow);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+    
+    // 布置节点在圆形上
+    participants.forEach((participant, index) => {
+        const angle = (index * 2 * Math.PI) / participants.length;
+        const x = centerX + circleRadius * Math.cos(angle);
+        const y = centerY + circleRadius * Math.sin(angle);
+        nodePositions[participant] = { x, y };
+        
+        // 绘制节点背景
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', x);
+        circle.setAttribute('cy', y);
+        circle.setAttribute('r', radius);
+        circle.setAttribute('fill', '#f0f9ff');
+        circle.setAttribute('stroke', '#93c5fd');
+        circle.setAttribute('stroke-width', '3');
+        circle.setAttribute('filter', 'url(#drop-shadow)');
+        svg.appendChild(circle);
+        
+        // 添加小人图像
+        const person = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        person.setAttribute('d', 'M -20 -20 L 0 -40 L 20 -20 L 10 20 L -10 20 Z');
+        person.setAttribute('transform', `translate(${x},${y}) scale(1.2)`);
+        person.setAttribute('fill', '#3b82f6');
+        svg.appendChild(person);
+        
+        // 添加节点文本
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y + radius + 25);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#1e40af');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-size', '14');
+        text.textContent = participant;
+        svg.appendChild(text);
+    });
+    
+    // 添加阴影滤镜
+    const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+    filter.setAttribute('id', 'drop-shadow');
+    filter.setAttribute('height', '130%');
+    filter.setAttribute('width', '130%');
+    
+    const feOffset = document.createElementNS('http://www.w3.org/2000/svg', 'feOffset');
+    feOffset.setAttribute('result', 'offOut');
+    feOffset.setAttribute('in', 'SourceGraphic');
+    feOffset.setAttribute('dx', '2');
+    feOffset.setAttribute('dy', '2');
+    
+    const feGaussianBlur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+    feGaussianBlur.setAttribute('result', 'blurOut');
+    feGaussianBlur.setAttribute('in', 'offOut');
+    feGaussianBlur.setAttribute('stdDeviation', '3');
+    
+    const feBlend = document.createElementNS('http://www.w3.org/2000/svg', 'feBlend');
+    feBlend.setAttribute('in', 'SourceGraphic');
+    feBlend.setAttribute('in2', 'blurOut');
+    feBlend.setAttribute('mode', 'normal');
+    
+    filter.appendChild(feOffset);
+    filter.appendChild(feGaussianBlur);
+    filter.appendChild(feBlend);
+    defs.appendChild(filter);
+    
+    // 绘制边
+    relations.forEach(relation => {
+        const fromPos = nodePositions[relation.from];
+        const toPos = nodePositions[relation.to];
+        const color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+        
+        // 计算边的起点和终点（考虑节点半径）
+        const dx = toPos.x - fromPos.x;
+        const dy = toPos.y - fromPos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const startX = fromPos.x + (dx / dist) * radius;
+        const startY = fromPos.y + (dy / dist) * radius;
+        const endX = toPos.x - (dx / dist) * radius;
+        const endY = toPos.y - (dy / dist) * radius;
+        
+        // 绘制边
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', startX);
+        line.setAttribute('y1', startY);
+        line.setAttribute('x2', endX);
+        line.setAttribute('y2', endY);
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width', '3');
+        line.setAttribute('stroke-linecap', 'round');
+        line.setAttribute('marker-end', 'url(#arrowhead)');
+        svg.appendChild(line);
+        
+        // 添加金额标签
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        
+        const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        textBg.setAttribute('x', midX - 30);
+        textBg.setAttribute('y', midY - 20);
+        textBg.setAttribute('width', '60');
+        textBg.setAttribute('height', '20');
+        textBg.setAttribute('rx', '10');
+        textBg.setAttribute('ry', '10');
+        textBg.setAttribute('fill', 'white');
+        textBg.setAttribute('stroke', color);
+        textBg.setAttribute('stroke-width', '1');
+        svg.appendChild(textBg);
+        
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY - 5);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', color);
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('font-size', '12');
+        text.textContent = `¥${relation.amount.toFixed(2)}`;
+        svg.appendChild(text);
+    });
+}
+
+// 生成随机颜色
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
 }
 
 // 重置所有数据
 function resetAll() {
-    if (confirm('确定要重置所有数据吗？这将清除所有参与者和费用记录。')) {
+    if (confirm('确定要重置所有数据吗？这将清除所有参与者记录。')) {
         participants = [];
         expenses = [];
         updatePayerSelect();
@@ -285,7 +392,17 @@ function loadData() {
     if (savedData) {
         try {
             const data = JSON.parse(savedData);
-            participants = data.participants || [];
+            
+            // 兼容旧数据格式
+            if (data.participants && data.participants.length > 0 && typeof data.participants[0] === 'string') {
+                participants = data.participants.map(name => ({
+                    name: name,
+                    amount: 0
+                }));
+            } else {
+                participants = data.participants || [];
+            }
+            
             expenses = data.expenses || [];
         } catch (e) {
             console.error('加载数据失败:', e);

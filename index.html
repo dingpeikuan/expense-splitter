@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多人平均费用计算器</title>
+    <title>多人AA费用计算器</title>
     <link rel="stylesheet" href="style.css">
+    <!-- 添加Chart.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>多人平均费用计算器</h1>
+            <h1>多人AA费用计算器</h1>
             <p>轻松计算朋友聚餐、旅行费用分摊</p>
         </header>
 
@@ -18,6 +20,7 @@
             <h2>1. 设置参与者</h2>
             <div class="input-group">
                 <input type="text" id="participant-name" placeholder="输入参与者姓名">
+                <input type="number" id="participant-amount" placeholder="金额（元）" min="0" step="0.01">
                 <button onclick="addParticipant()">添加参与者</button>
             </div>
             <div id="participants-list" class="participants-list"></div>
@@ -25,15 +28,8 @@
 
         <!-- 费用录入 -->
         <section class="section" id="expenses-section">
-            <h2>2. 添加费用项目</h2>
-            <div class="expense-form">
-                <input type="text" id="expense-desc" placeholder="费用描述（如：午餐、住宿）">
-                <input type="number" id="expense-amount" placeholder="金额（元）" min="0" step="0.01">
-                <select id="expense-payer">
-                    <option value="">选择支付人</option>
-                </select>
-                <button onclick="addExpense()">添加费用</button>
-            </div>
+            <h2>2. 费用记录</h2>
+            <select id="expense-payer" style="display: none;"></select>
             <div id="expenses-list" class="expenses-list"></div>
         </section>
 
@@ -48,7 +44,6 @@
         <section class="section">
             <div class="action-buttons">
                 <button onclick="resetAll()" class="reset-btn">重置所有数据</button>
-                <button onclick="saveData()" class="save-btn">保存数据</button>
             </div>
         </section>
     </div>

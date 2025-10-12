@@ -116,31 +116,44 @@ button:active {
     background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
 }
 
-.save-btn {
-    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+.expense-item input[type="number"] {
+    width: 80px;
+    padding: 5px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #4a5568;
+    background-color: #f8fafc;
+    transition: border-color 0.2s;
 }
 
-/* 费用表单样式 */
-.expense-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
-    gap: 10px;
-    margin-bottom: 20px;
-    align-items: end;
-}
-
-.expense-form input,
-.expense-form select {
-    padding: 12px;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.expense-form input:focus,
-.expense-form select:focus {
+.expense-item input[type="number"]:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+.expense-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.expense-item span {
+  font-size: 1.1em;
+  margin-right: 10px;
+  display: inline-block;
+}
+
+.expense-item:hover {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* 列表样式 */
@@ -288,4 +301,16 @@ button:active {
 .expense-item,
 .result-item {
     animation: fadeIn 0.3s ease;
+}
+
+/* 图表容器样式 */
+.chart-container {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
 }
