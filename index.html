@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多人平均费用计算器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>多人平均费用计算器</h1>
+            <p>轻松计算朋友聚餐、旅行费用分摊</p>
+        </header>
+
+        <!-- 参与者设置 -->
+        <section class="section" id="participants-section">
+            <h2>1. 设置参与者</h2>
+            <div class="input-group">
+                <input type="text" id="participant-name" placeholder="输入参与者姓名">
+                <button onclick="addParticipant()">添加参与者</button>
+            </div>
+            <div id="participants-list" class="participants-list"></div>
+        </section>
+
+        <!-- 费用录入 -->
+        <section class="section" id="expenses-section">
+            <h2>2. 添加费用项目</h2>
+            <div class="expense-form">
+                <input type="text" id="expense-desc" placeholder="费用描述（如：午餐、住宿）">
+                <input type="number" id="expense-amount" placeholder="金额（元）" min="0" step="0.01">
+                <select id="expense-payer">
+                    <option value="">选择支付人</option>
+                </select>
+                <button onclick="addExpense()">添加费用</button>
+            </div>
+            <div id="expenses-list" class="expenses-list"></div>
+        </section>
+
+        <!-- 计算和结果 -->
+        <section class="section" id="results-section">
+            <h2>3. 计算结果</h2>
+            <button onclick="calculate()" class="calculate-btn">计算分摊</button>
+            <div id="results" class="results"></div>
+        </section>
+
+        <!-- 操作按钮 -->
+        <section class="section">
+            <div class="action-buttons">
+                <button onclick="resetAll()" class="reset-btn">重置所有数据</button>
+                <button onclick="saveData()" class="save-btn">保存数据</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
