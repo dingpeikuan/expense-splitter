@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>多人AA费用计算器</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 添加Chart.js库 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="participant-styles.css">
 </head>
 <body>
     <div class="container">
@@ -17,37 +16,45 @@
 
         <!-- 参与者设置 -->
         <section class="section" id="participants-section">
-            <h2>1. 设置参与者</h2>
+            <div id="participants-list" class="participants-list">
+                参与者列表
+            </div>
+        </section>
+
+        <!-- 费用轮次管理与记录 -->
+        <section class="section" id="rounds-expenses-section">
             <div class="input-group">
-                <input type="text" id="participant-name" placeholder="输入参与者姓名">
-                <input type="number" id="participant-amount" placeholder="金额（元）" min="0" step="0.01">
-                <button onclick="addParticipant()">添加参与者</button>
+                <select id="round-selector" onchange="switchRound(this.value)">
+                    <option value="0">第1轮</option>
+                </select>
+                <button onclick="addRound()">添加新一轮次数据</button>
+                <button class="delete-btn" onclick="deleteCurrentRound()">删除当前轮次数据</button>
+                <button class="reset-all-round-btn" onclick="resetRoundData()">重置所有轮次数据</button>
             </div>
-            <div id="participants-list" class="participants-list"></div>
+            <div id="expenses-container"></div>
         </section>
 
-        <!-- 费用录入 -->
-        <section class="section" id="expenses-section">
-            <h2>2. 费用记录</h2>
-            <select id="expense-payer" style="display: none;"></select>
-            <div id="expenses-list" class="expenses-list"></div>
-        </section>
-
-        <!-- 计算和结果 -->
-        <section class="section" id="results-section">
-            <h2>3. 计算结果</h2>
-            <button onclick="calculate()" class="calculate-btn">计算分摊</button>
-            <div id="results" class="results"></div>
-        </section>
-
-        <!-- 操作按钮 -->
-        <section class="section">
+        <!-- 计算结果 -->
+        <section class="section" id="results-container">
             <div class="action-buttons">
-                <button onclick="resetAll()" class="reset-btn">重置所有数据</button>
+                <button class="calculate-btn" onclick="calculate()">开始计算分摊</button>
+                <button class="reset-btn" onclick="resetAll()">重置所有数据</button>
             </div>
+            <table id="results-table" class="matrix-table">
+                <thead>
+                    <tr>
+                    </tr>
+                </thead>
+                <tbody id="results"></tbody>
+            </table>
         </section>
     </div>
 
+    <script src="data-manager.js"></script>
+    <script src="participant-manager.js"></script>
+    <script src="expense-manager.js"></script>
+    <script src="round-manager.js"></script>
+    <script src="calculation-manager.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

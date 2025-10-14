@@ -1,0 +1,77 @@
+/* 参与者列表样式 */
+#participants-list {
+    margin-bottom: 20px;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: transparent;
+    border-radius: 0;
+    border: 0px;
+    box-shadow: none;
+}
+
+.participant-name {
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    pointer-events: none;
+    user-select: none;
+    outline: none;
+    box-sizing: border-box;
+    height: 44px;
+    line-height: 20px;
+}
+
+.add-participant {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.add-participant input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    height: 44px;
+    line-height: 20px;
+    box-sizing: border-box;
+    margin-top: 0;
+}
+
+.add-btn,
+.delete-btn {
+    padding: 12px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.add-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.delete-btn {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+}
