@@ -23,15 +23,15 @@ class CalculationManager {
             // 确保round.expenses是数组
             if (!Array.isArray(round.expenses)) return;
             
-            // 过滤出有效的费用记录
+            // 过滤出有效的费用记录（允许amount为0，只要有有效的payer）
             const validExpenses = round.expenses.filter(expense => 
-                expense && typeof expense.amount === 'number' && expense.amount > 0 && expense.payer
+                expense && typeof expense.amount === 'number' && expense.payer
             );
             
             // 如果本轮次没有费用记录，不参与计算
             if (validExpenses.length === 0) return;
             
-            // 获取当前轮次的参与者列表 - 这里需要从费用记录中提取实际参与者，而不是使用预定义的参与者列表
+            // 获取当前轮次的所有参与者 - 包括支付金额为0的参与者
             const roundParticipantNames = new Set();
             validExpenses.forEach(expense => {
                 if (expense.payer) {
@@ -65,6 +65,11 @@ class CalculationManager {
                         difference: 0 // 本轮差额
                     });
                 }
+            });
+            
+            // 初始化所有轮次参与者的支出为0
+            roundParticipants.forEach(roundParticipant => {
+                roundParticipant.amount = 0;
             });
             
             // 记录当前轮次每个付款人的支出
@@ -110,18 +115,19 @@ class CalculationManager {
         participants.forEach(participant => {
             // 计算每个参与者在所有有费用轮次中的总平均应付金额
             let totalAverageOwed = 0;
-            let totalParticipatedRounds = 0;
             
             // 计算该参与者参与了哪些轮次并计算总应付金额
             roundResults.forEach(round => {
                 if (round.participants.some(p => p.name === participant.name) && round.participants.length > 1) {
                     totalAverageOwed += round.averageExpense;
-                    totalParticipatedRounds++;
                 }
             });
             
             // 计算最终差额：实际支付总额 - 总应付金额
             participant.difference = participant.amount - totalAverageOwed;
+            
+            // 确保浮点数精度问题不会导致显示错误
+            participant.difference = Math.round(participant.difference * 100) / 100;
         });
 
         // 计算全局平均费用用于展示
@@ -145,35 +151,53 @@ class CalculationManager {
         const receivers = [];
 
         participantsCopy.forEach(p => {
-            if (p.difference > 0) {
+            // 应用四舍五入到两位小数
+            const roundedDifference = Math.round(p.difference * 100) / 100;
+            
+            if (roundedDifference > 0.01) { // 考虑浮点数精度，使用0.01作为阈值
                 // 差额为正，表示该参与者多付了钱，应该收钱
-                receivers.push({ ...p, remaining: p.difference });
-            } else if (p.difference < 0) {
+                receivers.push({ ...p, remaining: roundedDifference });
+            } else if (roundedDifference < -0.01) { // 考虑浮点数精度
                 // 差额为负，表示该参与者少付了钱，应该付钱
-                payers.push({ ...p, remaining: -p.difference });
+                payers.push({ ...p, remaining: -roundedDifference });
             }
         });
 
         const relations = [];
 
-        // 计算支付关系：让每个应该付钱的人向应该收钱的人支付
-        payers.forEach(payer => {
-            receivers.forEach(receiver => {
-                if (payer.remaining > 0 && receiver.remaining > 0) {
-                    const amount = Math.min(payer.remaining, receiver.remaining);
-                    if (amount > 0) {
-                        relations.push({
-                            from: payer.name,
-                            to: receiver.name,
-                            amount: amount,
-                            roundNumber: roundNumber
-                        });
-                        payer.remaining -= amount;
-                        receiver.remaining -= amount;
-                    }
-                }
-            });
-        });
+        // 使用贪心算法优化支付关系计算，减少转账次数
+        let i = 0;
+        let j = 0;
+        
+        while (i < payers.length && j < receivers.length) {
+            const payer = payers[i];
+            const receiver = receivers[j];
+            
+            if (payer.remaining <= 0.01 || receiver.remaining <= 0.01) {
+                // 跳过已经完成支付的用户
+                if (payer.remaining <= 0.01) i++;
+                if (receiver.remaining <= 0.01) j++;
+                continue;
+            }
+            
+            const paymentAmount = Math.min(payer.remaining, receiver.remaining);
+            
+            // 确保金额为正数且有意义
+            if (paymentAmount > 0.01) {
+                // 四舍五入到两位小数
+                const roundedAmount = Math.round(paymentAmount * 100) / 100;
+                
+                relations.push({
+                    from: payer.name,
+                    to: receiver.name,
+                    amount: roundedAmount,
+                    roundNumber: roundNumber
+                });
+                
+                payer.remaining = Math.round((payer.remaining - roundedAmount) * 100) / 100;
+                receiver.remaining = Math.round((receiver.remaining - roundedAmount) * 100) / 100;
+            }
+        }
 
         return relations;
     }
@@ -184,10 +208,10 @@ class CalculationManager {
         const receivers = [];
 
         participants.forEach(p => {
-            if (p.difference > 0) {
+            if (p.difference > 0.01) { // 考虑浮点数精度，使用0.01作为阈值
                 // 差额为正，表示该参与者多付了钱，应该收钱
                 receivers.push({ ...p, remaining: p.difference });
-            } else if (p.difference < 0) {
+            } else if (p.difference < -0.01) { // 考虑浮点数精度
                 // 差额为负，表示该参与者少付了钱，应该付钱
                 payers.push({ ...p, remaining: -p.difference });
             }
@@ -195,23 +219,39 @@ class CalculationManager {
 
         const relations = [];
 
-        // 计算支付关系：让每个应该付钱的人向应该收钱的人支付
-        payers.forEach(payer => {
-            receivers.forEach(receiver => {
-                if (payer.remaining > 0 && receiver.remaining > 0) {
-                    const amount = Math.min(payer.remaining, receiver.remaining);
-                    if (amount > 0) {
-                        relations.push({
-                            from: payer.name,
-                            to: receiver.name,
-                            amount: amount
-                        });
-                        payer.remaining -= amount;
-                        receiver.remaining -= amount;
-                    }
-                }
-            });
-        });
+        // 优化的支付关系计算算法
+        // 使用贪心算法减少转账次数：让每个付款人尽可能地偿还给收款人
+        let i = 0;
+        let j = 0;
+        
+        while (i < payers.length && j < receivers.length) {
+            const payer = payers[i];
+            const receiver = receivers[j];
+            
+            if (payer.remaining <= 0.01 || receiver.remaining <= 0.01) {
+                // 跳过已经完成支付的用户
+                if (payer.remaining <= 0.01) i++;
+                if (receiver.remaining <= 0.01) j++;
+                continue;
+            }
+            
+            const paymentAmount = Math.min(payer.remaining, receiver.remaining);
+            
+            // 确保金额为正数且有意义
+            if (paymentAmount > 0.01) {
+                // 四舍五入到两位小数
+                const roundedAmount = Math.round(paymentAmount * 100) / 100;
+                
+                relations.push({
+                    from: payer.name,
+                    to: receiver.name,
+                    amount: roundedAmount
+                });
+                
+                payer.remaining = Math.round((payer.remaining - roundedAmount) * 100) / 100;
+                receiver.remaining = Math.round((receiver.remaining - roundedAmount) * 100) / 100;
+            }
+        }
 
         return relations;
     }
