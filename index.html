@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多人AA费用计算器</title>
+    <title>AA计算器</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="participant-styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>多人AA费用计算器</h1>
+            <h1>AA计算器</h1>
             <p>轻松计算朋友聚餐、旅行费用分摊</p>
         </header>
 
@@ -39,17 +39,25 @@
             <div class="action-buttons">
                 <button class="calculate-btn" onclick="calculate()">开始计算分摊</button>
                 <button class="reset-btn" onclick="resetAll()">重置所有数据</button>
+                <button class="screenshot-btn" onclick="takeScreenshot()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                        <line x1="7" y1="7" x2="17" y2="7"></line>
+                        <line x1="7" y1="3" x2="7" y2="7"></line>
+                        <line x1="17" y1="3" x2="17" y2="7"></line>
+                        <line x1="17" y1="17" x2="17" y2="21"></line>
+                        <line x1="7" y1="17" x2="7" y2="21"></line>
+                        <line x1="7" y1="21" x2="17" y2="21"></line>
+                    </svg>
+                    保存计算结果
+                </button>
             </div>
-            <table id="results-table" class="matrix-table">
-                <thead>
-                    <tr>
-                    </tr>
-                </thead>
-                <tbody id="results"></tbody>
-            </table>
+            <div id="results"></div>
         </section>
     </div>
 
+    <!-- 引入html2canvas库用于截图功能 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="data-manager.js"></script>
     <script src="participant-manager.js"></script>
     <script src="expense-manager.js"></script>

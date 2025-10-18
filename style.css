@@ -133,24 +133,39 @@ button:active {
     margin-bottom: 0;
 }
 
-/* 费用项样式 - 适应4列表格 */
+/* 费用项样式 - 优化表格 */
 .expense-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 15px;
+    margin: 15px auto;
+    table-layout: fixed;
 }
 
 .expense-table th,
 .expense-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 15px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    word-wrap: break-word;
 }
 
 .expense-table th {
-    background-color: #f7fafc;
+    background-color: #667eea;
     font-weight: 600;
-    color: #4a5568;
+    color: white;
+    font-size: 15px;
+}
+
+.expense-table tr:nth-child(even) {
+    background-color: #f8f9ff;
+}
+
+.expense-table tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.expense-table tr:hover {
+    background-color: #e6ebff;
 }
 
 .expense-table th:nth-child(1),
@@ -158,10 +173,12 @@ button:active {
 .expense-table td:nth-child(1),
 .expense-table td:nth-child(2) { 
     width: 37.5%; /* 描述和支付人列各占37.5% */
+    text-align: left;
 }
 .expense-table th:nth-child(3),
 .expense-table td:nth-child(3) { 
     width: 15%; /* 金额列占15% */
+    text-align: right;
 }
 .expense-table th:nth-child(4),
 .expense-table td:nth-child(4) { 
@@ -274,23 +291,26 @@ button:active {
 .matrix-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin: 20px auto;
     overflow-x: auto;
     display: block;
+    table-layout: fixed;
 }
 
 .matrix-table th,
 .matrix-table td {
-    padding: 12px;
+    padding: 12px 15px;
     text-align: center;
     border: 1px solid #e2e8f0;
     min-width: 100px;
+    word-wrap: break-word;
 }
 
 .matrix-table th {
     background-color: #667eea;
     color: white;
     font-weight: 600;
+    font-size: 15px;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -304,11 +324,15 @@ button:active {
 }
 
 .matrix-table tr:nth-child(even) {
-    background-color: #f7fafc;
+    background-color: #f8f9ff;
+}
+
+.matrix-table tr:nth-child(odd) {
+    background-color: #ffffff;
 }
 
 .matrix-table tr:hover {
-    background-color: #ebf8ff;
+    background-color: #e6ebff;
 }
 
 .matrix-table .amount {
@@ -423,99 +447,320 @@ button:active {
     }
 }
 
-/* 添加轮次结果相关样式 */
-.round-results {
+/* 添加轮次结果相关样式 - 优化版 */
+.round-results-container {
     margin-top: 20px;
-    padding: 15px;
+    padding: 20px;
     background-color: #f9f9f9;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.round-result {
-    margin-bottom: 25px;
-    padding: 15px;
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-}
-
-.round-result h4 {
+.round-results-container h3 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     color: #333;
-    font-size: 1.2em;
+    font-size: 1.5em;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.round-result-wrapper {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.round-result-wrapper:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+.round-result-wrapper h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.3em;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .round-summary {
     display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    padding: 10px;
+    gap: 30px;
+    margin-bottom: 20px;
+    padding: 15px;
     background-color: #f5f5f5;
-    border-radius: 4px;
+    border-radius: 8px;
+    font-size: 1.1em;
 }
 
 .round-summary p {
     margin: 0;
-    font-weight: 500;
-}
-
-.round-participants,
-.round-relations {
-    margin-bottom: 15px;
-}
-
-.round-participants h5,
-.round-relations h5 {
-    margin-top: 0;
-    margin-bottom: 10px;
+    font-weight: 600;
     color: #555;
-    font-size: 1em;
 }
 
-.round-participants table,
-.round-relations table {
+/* 本轮支出和转账表格样式 */
+.round-expenses-table,
+.round-relations-table {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fafafa;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.round-expenses-table h5,
+.round-relations-table h5 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 10px 0;
+    border-bottom: 2px solid #667eea;
+}
+
+.round-expenses-table table,
+.round-relations-table table {
     width: 100%;
     border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    table-layout: fixed;
+    margin: 0 auto;
 }
 
-.round-participants th,
-.round-relations th,
-.round-participants td,
-.round-relations td {
-    padding: 8px;
-    text-align: left;
-    border: 1px solid #ddd;
+.round-expenses-table th,
+.round-relations-table th,
+.round-expenses-table td,
+.round-relations-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid #eee;
+    word-wrap: break-word;
 }
 
-.round-participants th,
-.round-relations th {
-    background-color: #f2f2f2;
+.round-expenses-table th,
+.round-relations-table th {
+    background-color: #667eea;
+    color: white;
     font-weight: 600;
+    font-size: 15px;
+}
+
+.round-expenses-table tr:nth-child(even),
+.round-relations-table tr:nth-child(even) {
+    background-color: #f8f9ff;
+}
+
+.round-expenses-table tr:nth-child(odd),
+.round-relations-table tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.round-expenses-table tr:hover,
+.round-relations-table tr:hover {
+    background-color: #e6ebff;
+}
+
+/* 所有轮次统计结果样式 */
+.all-rounds-stats-container {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.all-rounds-stats-container h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.5em;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+}
+
+.all-rounds-expenses,
+.final-transfers {
+    margin-bottom: 25px;
+    padding: 20px;
+    background-color: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.all-rounds-expenses:hover,
+.final-transfers:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+.all-rounds-expenses h4,
+.final-transfers h4 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+}
+
+.all-rounds-expenses table,
+.final-transfers table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    table-layout: fixed;
+    margin: 0 auto;
+}
+
+.all-rounds-expenses th,
+.final-transfers th,
+.all-rounds-expenses td,
+.final-transfers td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid #eee;
+    word-wrap: break-word;
+}
+
+.all-rounds-expenses th,
+.final-transfers th {
+    background-color: #764ba2;
+    color: white;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.all-rounds-expenses tr:nth-child(even),
+.final-transfers tr:nth-child(even) {
+    background-color: #f8f9ff;
+}
+
+.all-rounds-expenses tr:nth-child(odd),
+.final-transfers tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.all-rounds-expenses tr:hover,
+.final-transfers tr:hover {
+    background-color: #e6ebff;
 }
 
 /* 更新现有样式 */
 .summary {
     margin-bottom: 20px;
-    padding: 15px;
+    padding: 20px;
     background-color: #f9f9f9;
-    border-radius: 8px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.participant-results,
-.payment-relations {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-}
-
-.participant-results h3,
-.payment-relations h3 {
+.summary h3 {
     margin-top: 0;
     margin-bottom: 15px;
     color: #333;
+    font-size: 1.5em;
+}
+
+.summary p {
+    margin: 8px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #555;
+}
+
+/* 截图按钮样式 */
+.screenshot-btn {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 15px 30px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+}
+
+.screenshot-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(66, 153, 225, 0.4);
+}
+
+.screenshot-btn:active {
+    transform: translateY(0);
+}
+
+/* 确保action-buttons内的按钮样式一致 */
+.action-buttons .calculate-btn,
+.action-buttons .reset-btn,
+.action-buttons .screenshot-btn {
+    padding: 15px 30px;
+    font-size: 16px;
+    border-radius: 10px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* 响应式设计优化 */
+@media (max-width: 768px) {
+    .round-summary {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .round-expenses-table table,
+    .round-relations-table table,
+    .all-rounds-expenses table,
+    .final-transfers table {
+        font-size: 0.9em;
+    }
+    
+    .round-expenses-table th,
+    .round-relations-table th,
+    .all-rounds-expenses th,
+    .final-transfers th,
+    .round-expenses-table td,
+    .round-relations-table td,
+    .all-rounds-expenses td,
+    .final-transfers td {
+        padding: 8px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .calculate-btn,
+    .action-buttons .reset-btn,
+    .action-buttons .screenshot-btn {
+        width: 100%;
+    }
 }
 
 /* 正负数样式 */

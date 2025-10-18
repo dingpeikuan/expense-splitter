@@ -67,7 +67,7 @@ class ParticipantManager {
         const selects = document.querySelectorAll('select.payer-select');
         selects.forEach(select => {
             const currentValue = select.value;
-            select.innerHTML = '<option value="">请选择支付人</option>';
+            select.innerHTML = '<option value="">请选择支付人(请不要重复选择)</option>';
             
             this.allParticipants.forEach(participant => {
                 const option = document.createElement('option');

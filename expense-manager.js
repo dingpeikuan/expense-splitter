@@ -101,7 +101,7 @@ class ExpenseManager {
                 descInput.type = 'text';
                 descInput.value = expense.description;
                 descInput.placeholder = '费用描述';
-                descInput.oninput = (e) => this.updateExpense(roundIndex, expenseIndex, 'description', e.target.value);
+                descInput.oninput = (e) => this.updateExpense(currentRound, expenseIndex, 'description', e.target.value);
                 descCell.appendChild(descInput);
                 
                 // 金额
@@ -111,14 +111,14 @@ class ExpenseManager {
                 amountInput.value = expense.amount;
                 amountInput.min = '0';
                 amountInput.step = '0.01';
-                amountInput.oninput = (e) => this.updateExpense(roundIndex, expenseIndex, 'amount', e.target.value);
+                amountInput.oninput = (e) => this.updateExpense(currentRound, expenseIndex, 'amount', e.target.value);
                 amountCell.appendChild(amountInput);
                 
                 // 支付人
                 const payerCell = document.createElement('td');
                 const payerSelect = document.createElement('select');
                 payerSelect.className = 'payer-select';
-                payerSelect.innerHTML = '<option value="">请选择支付人</option>';
+                payerSelect.innerHTML = '<option value="">请选择支付人(请不要重复选择)</option>';
                 
                 ParticipantManager.getInstance().allParticipants.forEach(participant => {
                     const option = document.createElement('option');
@@ -130,7 +130,7 @@ class ExpenseManager {
                     payerSelect.appendChild(option);
                 });
                 
-                payerSelect.onchange = (e) => this.updateExpense(roundIndex, expenseIndex, 'payer', e.target.value);
+                payerSelect.onchange = (e) => this.updateExpense(currentRound, expenseIndex, 'payer', e.target.value);
                 payerCell.appendChild(payerSelect);
                 
                 // 操作
@@ -160,17 +160,17 @@ class ExpenseManager {
             // 添加空行
             const emptyRow = document.createElement('tr');
             const participantOptions = ParticipantManager.getInstance().allParticipants.map(p => 
-                `<option value="${p.name}">${p.name}</option>`
+                `<option value="${p.name}" ${this.emptyRowPayer === p.name ? 'selected' : ''}>${p.name}</option>`
             ).join('');
             emptyRow.innerHTML = `
-                <td><input type="text" placeholder="费用描述" oninput="expenseManager.updateEmptyRowDescription(${currentRound}, this.value)"></td>
+                <td><input type="text" placeholder="费用描述" oninput="expenseManager.updateEmptyRowDescription(${currentRound}, this.value)" value="${this.emptyRowDescription || ''}"></td>
                 <td>
                     <select onchange="expenseManager.updateEmptyRowPayer(${currentRound}, this.value)">
-                        <option value="">选择支付人</option>
+                        <option value="" ${!this.emptyRowPayer ? 'selected' : ''}>选择支付人(请不要重复选择)</option>
                         ${participantOptions}
                     </select>
                 </td>
-                <td><input type="number" placeholder="金额" oninput="expenseManager.updateEmptyRowAmount(${currentRound}, this.value)"></td>
+                <td><input type="number" placeholder="金额" oninput="expenseManager.updateEmptyRowAmount(${currentRound}, this.value)" value="${this.emptyRowAmount || ''}"></td>
                 <td>
                     <button class="add-btn" onclick="expenseManager.addEmptyExpense(${currentRound})">新增</button>
                 </td>
@@ -233,6 +233,19 @@ class ExpenseManager {
         
         if (amount >= 0 && payer) {
             const round = DataManager.getInstance().rounds[roundIndex];
+            
+            // 检查支付人是否已经在当前轮次中存在
+            const existingExpense = round.expenses.find(expense => expense.payer === payer);
+            if (existingExpense) {
+                alert('该支付人已经在当前费用轮次中，请修改对应的支付金额。');
+                // 当发现重复支付人时，清空支付人选择、描述和金额
+                this.emptyRowPayer = '';
+                this.emptyRowDescription = '';
+                this.emptyRowAmount = '';
+                this.renderExpenses(); // 重新渲染以更新UI
+                return;
+            }
+            
             round.expenses.push({
                 description: description,
                 amount: parseFloat(amount),
@@ -240,7 +253,7 @@ class ExpenseManager {
                 participants: ParticipantManager.getInstance().allParticipants
             });
             
-            // 清空空行数据
+            // 清空空行数据 - 仅在成功添加时清空
             this.emptyRowDescription = '';
             this.emptyRowAmount = 0;
             this.emptyRowPayer = '';
