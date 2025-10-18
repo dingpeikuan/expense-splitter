@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePayerSelect();
     renderParticipants();
     renderExpenses();
+    // 更新轮次选择器，确保刷新页面后保持在之前的轮次
+    updateRoundSelector();
     
     // 为重置所有轮次数据按钮添加事件监听器
     const resetRoundsBtn = document.getElementById('reset-rounds-btn');
@@ -126,6 +128,202 @@ function renderResults(participants, totalExpenses, averageAmount, relations) {
 function calculatePaymentRelations(settlements) {
     return calculationManager.calculatePaymentRelations(settlements);
 }
+
+// 截图功能 - 将计算结果保存为图片
+function takeScreenshot() {
+    const resultsElement = document.getElementById('results');
+    
+    if (!resultsElement || resultsElement.innerHTML.trim() === '') {
+        alert('请先计算分摊结果后再保存截图');
+        return;
+    }
+    
+    // 显示加载提示
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.cssText = 
+        'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); ' +
+        'background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); ' +
+        'z-index: 1000; text-align: center;';
+    loadingDiv.innerHTML = `
+        <div style="margin-bottom: 20px; font-size: 18px; color: #666;">正在生成截图，请稍候...</div>
+        <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    `;
+    document.body.appendChild(loadingDiv);
+    
+    // 创建一个全新的容器而不是克隆，以避免任何潜在的克隆问题
+    const tempContainer = document.createElement('div');
+    tempContainer.style.width = resultsElement.offsetWidth + 'px';
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.backgroundColor = '#ffffff';
+    tempContainer.style.padding = '20px';
+    
+    // 复制resultsElement的样式
+    const resultsStyle = window.getComputedStyle(resultsElement);
+    tempContainer.style.fontFamily = resultsStyle.fontFamily;
+    tempContainer.style.fontSize = resultsStyle.fontSize;
+    tempContainer.style.color = resultsStyle.color;
+    tempContainer.style.lineHeight = resultsStyle.lineHeight;
+    
+    // 手动重新构建表格内容，特别关注每轮支出清单表格
+    const originalTables = resultsElement.querySelectorAll('table');
+    
+    // 遍历所有表格
+    originalTables.forEach(originalTable => {
+        // 创建新表格
+        const newTable = document.createElement('table');
+        newTable.style.borderCollapse = 'collapse';
+        newTable.style.width = originalTable.offsetWidth + 'px';
+        newTable.style.tableLayout = 'fixed';
+        newTable.style.borderSpacing = '0';
+        newTable.style.margin = '0';
+        
+        // 复制表格标题（如果有）
+        if (originalTable.caption) {
+            const newCaption = document.createElement('caption');
+            newCaption.textContent = originalTable.caption.textContent;
+            newTable.appendChild(newCaption);
+        }
+        
+        // 处理每一行
+        const originalRows = originalTable.querySelectorAll('tr');
+        originalRows.forEach(originalRow => {
+            const newRow = document.createElement('tr');
+            newRow.style.height = originalRow.offsetHeight + 'px';
+            
+            // 获取原始行中的所有单元格
+            const originalCells = originalRow.querySelectorAll('td, th');
+            
+            // 手动逐个复制单元格，确保合并单元格的属性和内容都被正确处理
+            originalCells.forEach(originalCell => {
+                // 创建新单元格
+                const newCell = document.createElement(originalCell.tagName);
+                
+                // 复制计算样式
+                const computedStyle = window.getComputedStyle(originalCell);
+                newCell.style.backgroundColor = computedStyle.backgroundColor;
+                newCell.style.color = computedStyle.color;
+                newCell.style.fontWeight = computedStyle.fontWeight;
+                newCell.style.textAlign = computedStyle.textAlign;
+                newCell.style.padding = computedStyle.padding;
+                newCell.style.border = computedStyle.border;
+                newCell.style.fontFamily = computedStyle.fontFamily;
+                newCell.style.fontSize = computedStyle.fontSize;
+                newCell.style.lineHeight = computedStyle.lineHeight;
+                newCell.style.verticalAlign = computedStyle.verticalAlign;
+                newCell.style.width = originalCell.offsetWidth + 'px';
+                newCell.style.height = originalCell.offsetHeight + 'px';
+                newCell.style.overflow = 'visible';
+                newCell.style.whiteSpace = 'nowrap';
+                newCell.style.textOverflow = 'clip';
+                
+                // 非常重要：直接复制原始单元格的所有属性，包括rowspan和colspan
+                const attributes = originalCell.attributes;
+                for (let i = 0; i < attributes.length; i++) {
+                    const attr = attributes[i];
+                    newCell.setAttribute(attr.name, attr.value);
+                }
+                
+                // 直接使用textContent而不是innerHTML，确保文本内容被正确复制
+                // 对于合并单元格中的数据，这尤为重要
+                newCell.textContent = originalCell.textContent;
+                
+                // 将新单元格添加到行中
+                newRow.appendChild(newCell);
+            });
+            
+            // 将行添加到表格
+            newTable.appendChild(newRow);
+        });
+        
+        // 将表格添加到临时容器
+        tempContainer.appendChild(newTable);
+        // 添加一个换行符
+        tempContainer.appendChild(document.createElement('br'));
+    });
+    
+    // 添加临时容器到文档
+    document.body.appendChild(tempContainer);
+    
+    // 样式已经在前面设置过，这里不再重复设置
+    
+    // 配置优化的截图选项，特别针对表格和合并单元格优化
+    const options = {
+        scale: 2, // 提高截图质量
+        backgroundColor: '#ffffff',
+        logging: false,
+        removeContainer: false,
+        allowTaint: true,
+        useCORS: true,
+        letterRendering: true,
+        useTransform: true,
+        width: tempContainer.offsetWidth,
+        height: tempContainer.offsetHeight,
+        // 启用SVG渲染，更好地支持复杂布局
+        useForeignObjectForSVG: true,
+        // 减少渲染时的裁剪问题
+        imageTimeout: 30000,
+        // 禁用缓存以确保获取最新样式
+        cacheBust: true,
+        // 优化表格渲染
+        proxy: null, // 无代理需求
+        ignoreElements: (element) => {
+            // 确保不包含任何不应出现在截图中的元素
+            return element === loadingDiv;
+        },
+        // 自定义canvas绘制前的处理
+        onclone: (clonedDoc) => {
+            // 为克隆文档中的表格再次应用样式，确保渲染一致性
+            const clonedTables = clonedDoc.querySelectorAll('table');
+            clonedTables.forEach(table => {
+                table.style.borderCollapse = 'collapse';
+                table.style.tableLayout = 'fixed';
+            });
+        }
+    };
+    
+    try {
+        html2canvas(tempContainer, options).then(canvas => {
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = `费用计算结果_${new Date().toLocaleDateString('zh-CN')}.png`;
+            
+            // 使用toDataURL生成图片数据
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+            
+            // 清理临时元素
+            setTimeout(() => {
+                document.body.removeChild(loadingDiv);
+                document.body.removeChild(tempContainer);
+            }, 100);
+        }).catch(error => {
+            console.error('截图生成失败:', error);
+            alert('截图生成失败，请重试');
+            
+            // 清理临时元素
+            document.body.removeChild(loadingDiv);
+            document.body.removeChild(tempContainer);
+        });
+    } catch (error) {
+        console.error('截图功能出错:', error);
+        alert('截图功能暂不可用，请稍后再试');
+        
+        // 清理临时元素
+        document.body.removeChild(loadingDiv);
+        document.body.removeChild(tempContainer);
+    }
+}
+
+// 添加旋转动画样式
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
 
 // 渲染支付关系图表
 function renderPaymentChart(paymentRelations) {

@@ -259,6 +259,10 @@ class CalculationManager {
     // 渲染结果表格
     renderResults(participants, totalExpenses, averageAmount, relations, roundResults) {
         const resultsDiv = document.getElementById('results');
+        
+        // 清除旧的表格结构，因为现在使用div容器展示结果
+        resultsDiv.innerHTML = '';
+        
         let html = `
             <div class="summary">
                 <h3>费用汇总</h3>
@@ -267,24 +271,25 @@ class CalculationManager {
             </div>
         `;
 
-        // 渲染每轮的计算结果
+        // 渲染每轮的计算结果 - 按需求优化为整体div
         if (roundResults && roundResults.length > 0) {
             html += `
-                <div class="round-results">
+                <div class="round-results-container">
                     <h3>各轮次计算结果</h3>
             `;
             
             roundResults.forEach(round => {
                 html += `
-                    <div class="round-result">
+                    <div class="round-result-wrapper">
                         <h4>第${round.roundIndex}轮</h4>
                         <div class="round-summary">
                             <p>本轮总费用: ¥${round.totalExpense.toFixed(2)}</p>
                             <p>本轮人均费用: ¥${round.averageExpense.toFixed(2)}</p>
                         </div>
                         
-                        <div class="round-participants">
-                            <h5>参与者明细</h5>
+                        <!-- 本轮实际支出清单 -->
+                        <div class="round-expenses-table">
+                            <h5>本轮实际支出清单</h5>
                             <table>
                                 <thead>
                                     <tr>
@@ -312,22 +317,22 @@ class CalculationManager {
                                 </tbody>
                             </table>
                         </div>
-                    `;
+                        
+                        <!-- 本轮转账关系清单 -->
+                        <div class="round-relations-table">
+                            <h5>本轮转账关系清单</h5>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>付款人</th>
+                                        <th>收款人</th>
+                                        <th>金额</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
                 
                 if (round.relations.length > 0) {
-                    html += `
-                            <div class="round-relations">
-                                <h5>本轮转账清单</h5>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>付款人</th>
-                                            <th>收款人</th>
-                                            <th>金额</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                    
                     round.relations.forEach(relation => {
                         html += `
                             <tr>
@@ -336,14 +341,17 @@ class CalculationManager {
                                 <td>¥${relation.amount.toFixed(2)}</td>
                             </tr>`;
                     });
-                
+                } else {
                     html += `
-                                    </tbody>
-                                </table>
-                            </div>`;
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #999;">本轮无需转账</td>
+                        </tr>`;
                 }
                 
                 html += `
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 `;
             });
@@ -353,44 +361,83 @@ class CalculationManager {
             `;
         }
 
-        // 渲染全局参与者明细
+        // 渲染所有轮次统计结果 - 按需求优化为整体div
         html += `
-            <div class="participant-results">
-                <h3>参与者汇总明细</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>参与者</th>
-                            <th>总支出</th>
-                            <th>最终差额</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <div class="all-rounds-stats-container">
+                <h3>所有轮次统计结果</h3>
+                
+                <!-- 每轮支持清单 -->
+                <div class="all-rounds-expenses">
+                    <h4>每轮支出清单</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>轮次</th>
+                                <th>付款人</th>
+                                <th>支付金额</th>
+                                <th>总费用</th>
+                                <th>参与人数</th>
+                                <th>人均费用</th>
+                            </tr>
+                        </thead>
+                        <tbody>
         `;
 
-        participants.forEach(p => {
-            const status = p.difference > 0 ? '应收' : p.difference < 0 ? '应付' : '平衡';
-            const amountClass = p.difference > 0 ? 'positive' : p.difference < 0 ? 'negative' : '';
+        if (roundResults && roundResults.length > 0) {
+            roundResults.forEach(round => {
+                // 获取该轮次的费用记录以提取付款人信息
+                const rounds = dataManager.getRounds();
+                // 根据轮次索引直接获取对应轮次数据，而不是使用find方法
+                const currentRound = rounds[round.roundIndex - 1];
+                
+                let payerData = [{name: '-', amount: '-'}];
+                if (currentRound && currentRound.expenses) {
+                    // 直接获取付款人数据数组而不是格式化的字符串
+                    payerData = this.getRoundPayerData(currentRound.expenses);
+                }
+                
+                // 为每个付款人生成一行，只有第一行显示轮次等信息并合并单元格
+                payerData.forEach((payer, index) => {
+                    if (index === 0) {
+                        // 第一行，添加rowspan属性
+                        html += `
+                            <tr>
+                                <td rowspan="${payerData.length}">第${round.roundIndex}轮</td>
+                                <td>${payer.name}</td>
+                                <td>${typeof payer.amount === 'number' ? `¥${payer.amount.toFixed(2)}` : payer.amount}</td>
+                                <td rowspan="${payerData.length}">¥${round.totalExpense.toFixed(2)}</td>
+                                <td rowspan="${payerData.length}">${round.participants.length}</td>
+                                <td rowspan="${payerData.length}">¥${round.averageExpense.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    } else {
+                        // 后续行，只显示付款人和支付金额
+                        html += `
+                            <tr>
+                                <td>${payer.name}</td>
+                                <td>${typeof payer.amount === 'number' ? `¥${payer.amount.toFixed(2)}` : payer.amount}</td>
+                            </tr>
+                        `;
+                    }
+                });
+            });
+        } else {
             html += `
                 <tr>
-                    <td>${p.name}</td>
-                    <td>¥${p.amount.toFixed(2)}</td>
-                    <td class="${amountClass}">${status} ¥${Math.abs(p.difference).toFixed(2)}</td>
+                    <td colspan="4" style="text-align: center; color: #999;">暂无轮次数据</td>
                 </tr>
             `;
-        });
+        }
 
         html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+                        </tbody>
 
-        // 渲染最终转账清单
-        if (relations.length > 0) {
-            html += `
-                <div class="payment-relations">
-                    <h3>最终转账清单</h3>
+                    </table>
+                </div>
+                
+                <!-- 最终转账清单 -->
+                <div class="final-transfers">
+                    <h4>最终转账清单</h4>
                     <table>
                         <thead>
                             <tr>
@@ -400,8 +447,9 @@ class CalculationManager {
                             </tr>
                         </thead>
                         <tbody>
-            `;
+        `;
 
+        if (relations.length > 0) {
             relations.forEach(relation => {
                 html += `
                     <tr>
@@ -411,13 +459,20 @@ class CalculationManager {
                     </tr>
                 `;
             });
-
+        } else {
             html += `
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #999;">无需转账，收支平衡</td>
+                </tr>
+            `;
+        }
+
+        html += `
                         </tbody>
                     </table>
                 </div>
-            `;
-        }
+            </div>
+        `;
 
         resultsDiv.innerHTML = html;
     }
@@ -492,6 +547,51 @@ class CalculationManager {
 
         svg += '</svg>';
         chartDiv.innerHTML = svg;
+    }
+
+    // 获取轮次付款人信息
+    getRoundPayerInfo(expenses) {
+        // 统计每个付款人的支付金额
+        const payerMap = {};
+        
+        expenses.forEach(expense => {
+            if (expense && expense.payer && typeof expense.amount === 'number') {
+                if (!payerMap[expense.payer]) {
+                    payerMap[expense.payer] = 0;
+                }
+                payerMap[expense.payer] += expense.amount;
+            }
+        });
+        
+        // 转换为字符串格式，多个付款人用换行显示
+        const payerNames = Object.keys(payerMap).join('<br>');
+        const payerAmounts = Object.values(payerMap).map(amount => `¥${amount.toFixed(2)}`).join('<br>');
+        
+        return { payerNames, payerAmounts };
+    }
+    
+    // 获取轮次付款人数据数组
+    getRoundPayerData(expenses) {
+        // 统计每个付款人的支付金额
+        const payerMap = {};
+        
+        expenses.forEach(expense => {
+            if (expense && expense.payer && typeof expense.amount === 'number') {
+                if (!payerMap[expense.payer]) {
+                    payerMap[expense.payer] = 0;
+                }
+                payerMap[expense.payer] += expense.amount;
+            }
+        });
+        
+        // 转换为对象数组格式
+        const payerData = Object.keys(payerMap).map(payerName => ({
+            name: payerName,
+            amount: payerMap[payerName]
+        }));
+        
+        // 如果没有付款人，返回默认数据
+        return payerData.length > 0 ? payerData : [{name: '-', amount: '-'}];
     }
 
     // 生成随机颜色
