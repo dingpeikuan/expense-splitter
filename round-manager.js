@@ -166,15 +166,13 @@ class RoundManager {
     }
 
     // 添加费用
-    addExpense(description, amount, payer) {
+    addExpense(amount, payer) {
         this.rounds[this.currentRound].expenses.push({
-            description: description,
             amount: amount,
             payer: payer
         });
         // 同步到DataManager
         DataManager.getInstance().rounds[this.currentRound].expenses.push({
-            description: description,
             amount: amount,
             payer: payer
         });
