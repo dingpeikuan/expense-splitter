@@ -337,18 +337,36 @@ function getRandomColor() {
 
 // 重置所有数据
 function resetAll() {
-    if (confirm('确定要重置所有数据吗？这将清除所有参与者记录。')) {
-        allParticipants = [];
-        rounds = [{
-            participants: [],
-            expenses: []
-        }];
-        currentRound = 0;
-        updatePayerSelect();
-        renderParticipants();
-        renderExpenses();
+    if (confirm('确定要重置所有数据吗？这将清除所有参与者记录和轮次数据。')) {
+        // 获取所有管理器实例
+        const dataManager = DataManager.getInstance();
+        const participantManager = ParticipantManager.getInstance();
+        const roundManager = RoundManager.getInstance();
+        const expenseManager = ExpenseManager.getInstance();
+        
+        // 清空参与者列表
+        dataManager.setAllParticipants([]);
+        participantManager.allParticipants = [];
+        
+        // 重置轮次数据
+        dataManager.rounds = [{ participants: [], expenses: [] }];
+        dataManager.currentRound = 0;
+        dataManager.saveData();
+        
+        // 更新RoundManager
+        roundManager.rounds = [{ participants: [], expenses: [] }];
+        roundManager.currentRound = 0;
+        roundManager.updateRoundSelector();
+        
+        // 更新UI
+        participantManager.renderParticipants();
+        expenseManager.renderExpenses();
         document.getElementById('results').innerHTML = '';
-        localStorage.removeItem('expenseSplitterData');
+        
+        // 清空全局变量
+        allParticipants = [];
+        rounds = [{ participants: [], expenses: [] }];
+        currentRound = 0;
     }
 }
 
